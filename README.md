@@ -66,15 +66,23 @@ The page talks to Flask at `localhost:5000` automatically.
 
 ## notes on cracker performance
 
-Speed depends on where the password falls in the search space, not just its length. The cracker iterates in character-set order (punctuation → digits → uppercase → lowercase roughly), so a 5-character password made of early characters like `aaaaa` cracks faster than a 4-character one near the end of the search space. This is actually a useful thing to demonstrate — password strength isn't just about length.
+Speed depends on two things: length and position in the search space. The cracker iterates through all 94 printable ASCII characters in order (punctuation first, then digits, uppercase, lowercase) and tries every combination from length 1 upward — so where your password falls in that sequence matters as much as how long it is.
 
-Rough benchmarks on a typical laptop:
+Real benchmark results on a typical laptop:
 
-| password | time |
-|---|---|
-| 4 chars, mixed | ~40s |
-| 5 chars, early in space | ~7s |
-| 5 chars, late in space | ~75s |
+| password | length | attempts | time | position in space |
+|---|---|---|---|---|
+| `abc` | 3 | 9K | 1ms | 1% — early |
+| `c0]P` | 4 | 2.97M | 0.28s | 4% — early |
+| `6{vY` | 4 | 49.8M | 4.82s | 64% — late |
+| `'F1p` | 4 | 57.6M | 5.56s | 74% — late |
+| `;p1M` | 4 | 65.8M | 6.42s | 84% — late |
+| `2f;UN` | 5 | 4.3B | 439s | 59% — mid |
+| `g7+(W}` | 6 | 56.1B | ~2h | 8% — early |
+
+position % = attempts ÷ total combinations up to and including that length.
+
+The key insight is that length compounds exponentially. `g7+(W}` is only 8% into the 6-character search space, but 8% of ~689 billion combinations is still 56 billion attempts — nearly 2 hours. A 4-character password late in the space (`; p1M`, 84%) cracks faster than a 6-character one that's early (8%). Beyond 6 characters, pure brute force becomes effectively impractical.
 
 ---
 
