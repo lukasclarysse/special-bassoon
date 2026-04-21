@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Password Toolkit</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0d0d0d;
+      --surface:   #141414;
+      --border:    #2a2a2a;
+      --accent:    #c8f135;
+      --accent-dim:#8aab1e;
+      --text:      #e8e8e8;
+      --muted:     #666;
+      --danger:    #ff4d4d;
+      --mono:      'Space Mono', monospace;
+      --sans:      'DM Sans', sans-serif;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Header ── */
+    header {
+      padding: 2rem 3rem 0;
+      display: flex;
+      align-items: baseline;
+      gap: 1rem;
+    }
+    header h1 {
+      font-family: var(--mono);
+      font-size: 1.1rem;
+      letter-spacing: .05em;
+      color: var(--accent);
+    }
+    header span {
+      font-size: .8rem;
+      color: var(--muted);
+      font-family: var(--mono);
+    }
+
+    /* ── Tabs ── */
+    nav {
+      display: flex;
+      gap: 0;
+      padding: 2rem 3rem 0;
+      border-bottom: 1px solid var(--border);
+    }
+    nav button {
+      background: none;
+      border: none;
+      border-bottom: 2px solid transparent;
+      color: var(--muted);
+      font-family: var(--mono);
+      font-size: .8rem;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      padding: .6rem 1.4rem .6rem 0;
+      cursor: pointer;
+      margin-bottom: -1px;
+      transition: color .2s, border-color .2s;
+    }
+    nav button:hover { color: var(--text); }
+    nav button.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+
+    /* ── Panels ── */
+    main { flex: 1; padding: 2.5rem 3rem; }
+    .panel { display: none; max-width: 560px; }
+    .panel.active { display: block; }
+
+    /* ── Shared form elements ── */
+    label {
+      display: block;
+      font-size: .75rem;
+      font-family: var(--mono);
+      letter-spacing: .06em;
+      color: var(--muted);
+      text-transform: uppercase;
+      margin-bottom: .5rem;
+    }
+    input[type="number"],
+    input[type="text"],
+    input[type="password"] {
+      width: 100%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: .9rem;
+      padding: .65rem .9rem;
+      border-radius: 4px;
+      outline: none;
+      transition: border-color .2s;
+    }
+    input:focus { border-color: var(--accent); }
+
+    .field { margin-bottom: 1.4rem; }
+
+    /* ── Toggle group ── */
+    .toggle-group {
+      display: flex;
+      gap: .5rem;
+      flex-wrap: wrap;
+    }
+    .toggle-group button {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      font-family: var(--mono);
+      font-size: .75rem;
+      padding: .4rem .85rem;
+      border-radius: 3px;
+      cursor: pointer;
+      transition: all .15s;
+      letter-spacing: .04em;
+    }
+    .toggle-group button.on {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #0d0d0d;
+      font-weight: 700;
+    }
+
+    /* ── Primary button ── */
+    .btn-primary {
+      background: var(--accent);
+      border: none;
+      color: #0d0d0d;
+      font-family: var(--mono);
+      font-size: .85rem;
+      font-weight: 700;
+      letter-spacing: .06em;
+      padding: .7rem 1.6rem;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background .15s, transform .1s;
+    }
+    .btn-primary:hover { background: var(--accent-dim); }
+    .btn-primary:active { transform: scale(.98); }
+    .btn-primary:disabled { opacity: .4; cursor: not-allowed; }
+
+    /* ── Output box ── */
+    .output-box {
+      margin-top: 1.6rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 1rem 1.2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      min-height: 52px;
+    }
+    .output-box .password-text {
+      font-family: var(--mono);
+      font-size: 1rem;
+      letter-spacing: .04em;
+      color: var(--accent);
+      word-break: break-all;
+      flex: 1;
+    }
+    .output-box .copy-btn {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      font-family: var(--mono);
+      font-size: .7rem;
+      padding: .3rem .7rem;
+      border-radius: 3px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all .15s;
+    }
+    .output-box .copy-btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    /* ── Status / error messages ── */
+    .status {
+      margin-top: .8rem;
+      font-size: .78rem;
+      font-family: var(--mono);
+      min-height: 1.2em;
+    }
+    .status.ok  { color: var(--accent); }
+    .status.err { color: var(--danger); }
+
+    /* ── Logs table ── */
+    .logs-empty {
+      color: var(--muted);
+      font-family: var(--mono);
+      font-size: .85rem;
+      margin-top: 1rem;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: .8rem;
+      font-family: var(--mono);
+      margin-top: 1rem;
+    }
+    th {
+      text-align: left;
+      color: var(--muted);
+      font-weight: 400;
+      padding: .4rem .6rem;
+      border-bottom: 1px solid var(--border);
+      text-transform: uppercase;
+      letter-spacing: .05em;
+    }
+    td {
+      padding: .5rem .6rem;
+      border-bottom: 1px solid #1c1c1c;
+      color: var(--text);
+    }
+    td.mono { color: var(--accent); }
+
+    /* ── Cracker placeholder ── */
+    .placeholder-notice {
+      background: var(--surface);
+      border: 1px dashed var(--border);
+      border-radius: 4px;
+      padding: 1.2rem;
+      font-family: var(--mono);
+      font-size: .8rem;
+      color: var(--muted);
+      margin-top: 1.2rem;
+      line-height: 1.7;
+    }
+    .placeholder-notice span { color: var(--accent); }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>password-toolkit</h1>
+  <span>v0.1.0</span>
+</header>
+
+<nav>
+  <button class="active" data-tab="generator">Generator</button>
+  <button data-tab="cracker">Cracker</button>
+  <button data-tab="logs">Logs</button>
+</nav>
+
+<main>
+
+  <!-- ── Generator ── -->
+  <section class="panel active" id="tab-generator">
+
+    <div class="field">
+      <label>Length</label>
+      <input type="number" id="gen-length" value="20" min="1" max="128" />
+    </div>
+
+    <div class="field">
+      <label>Character Types</label>
+      <div class="toggle-group">
+        <button class="on" data-type="lowercase">lowercase</button>
+        <button class="on" data-type="uppercase">uppercase</button>
+        <button class="on" data-type="numbers">numbers</button>
+        <button class="on" data-type="special">special</button>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Exclude Characters</label>
+      <input type="text" id="gen-exclude" placeholder='e.g.  ; : / \ " ` 0 O' />
+    </div>
+
+    <button class="btn-primary" id="gen-btn">Generate</button>
+
+    <div class="output-box" id="gen-output" style="display:none">
+      <span class="password-text" id="gen-password"></span>
+      <button class="copy-btn" id="gen-copy">copy</button>
+    </div>
+    <div class="status" id="gen-status"></div>
+
+  </section>
+
+  <!-- ── Cracker ── -->
+  <section class="panel" id="tab-cracker">
+
+    <div class="field">
+      <label>Password to crack</label>
+      <input type="text" id="crack-input" placeholder="Paste a generated password…" />
+    </div>
+
+    <button class="btn-primary" id="crack-btn" disabled>Crack</button>
+
+    <div class="placeholder-notice">
+      <span>// cracker not yet connected.</span><br />
+      Backend endpoint <span>/api/crack</span> is stubbed — wire up your teammate's
+      module and this tab will come alive. Play snake while you wait.
+    </div>
+
+    <div id="snake-mount" style="margin-top:1.5rem;"></div>
+
+    <div class="status" id="crack-status"></div>
+
+  </section>
+
+  <!-- ── Logs ── -->
+  <section class="panel" id="tab-logs">
+    <div id="logs-container">
+      <p class="logs-empty">No crack attempts logged yet.</p>
+    </div>
+  </section>
+
+</main>
+
+<script>
+  const API = 'http://localhost:5000';
+
+  // ── Tab switching ────────────────────────────────────────────────────────
+  document.querySelectorAll('nav button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+    });
+  });
+
+  // ── Character type toggles ───────────────────────────────────────────────
+  document.querySelectorAll('.toggle-group button').forEach(btn => {
+    btn.addEventListener('click', () => btn.classList.toggle('on'));
+  });
+
+  // ── Generator ───────────────────────────────────────────────────────────
+  document.getElementById('gen-btn').addEventListener('click', async () => {
+    const statusEl  = document.getElementById('gen-status');
+    const outputEl  = document.getElementById('gen-output');
+    const passEl    = document.getElementById('gen-password');
+    const btn       = document.getElementById('gen-btn');
+
+    const length = parseInt(document.getElementById('gen-length').value, 10);
+    const excludedChars = document.getElementById('gen-exclude').value;
+
+    const charTypes = {};
+    document.querySelectorAll('.toggle-group button').forEach(b => {
+      charTypes[b.dataset.type] = b.classList.contains('on');
+    });
+
+    statusEl.className = 'status';
+    statusEl.textContent = '';
+    btn.disabled = true;
+    btn.textContent = 'Generating…';
+
+    try {
+      const res = await fetch(`${API}/api/generate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          length,
+          char_types: charTypes,
+          excluded_chars: excludedChars
+        })
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        statusEl.className = 'status err';
+        statusEl.textContent = data.error || 'Something went wrong.';
+        outputEl.style.display = 'none';
+      } else {
+        passEl.textContent = data.password;
+        outputEl.style.display = 'flex';
+      }
+
+    } catch {
+      statusEl.className = 'status err';
+      statusEl.textContent = 'Could not reach server. Is Flask running?';
+      outputEl.style.display = 'none';
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Generate';
+    }
+  });
+
+  // ── Copy button ──────────────────────────────────────────────────────────
+  document.getElementById('gen-copy').addEventListener('click', () => {
+    const pass = document.getElementById('gen-password').textContent;
+    if (!pass) return;
+    navigator.clipboard.writeText(pass).then(() => {
+      const btn = document.getElementById('gen-copy');
+      btn.textContent = 'copied!';
+      setTimeout(() => btn.textContent = 'copy', 1500);
+    });
+  });
+
+  // ── Logs helpers (called by cracker tab later) ───────────────────────────
+  const logs = [];
+
+  function addLog(entry) {
+    // entry: { password, attempts, duration_ms, cracked }
+    logs.push(entry);
+    renderLogs();
+  }
+
+  function renderLogs() {
+    const container = document.getElementById('logs-container');
+    if (logs.length === 0) {
+      container.innerHTML = '<p class="logs-empty">No crack attempts logged yet.</p>';
+      return;
+    }
+    container.innerHTML = `
+      <table>
+        <thead>
+          <tr>
+            <th>Password</th>
+            <th>Attempts</th>
+            <th>Time</th>
+            <th>Result</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${logs.map(l => `
+            <tr>
+              <td class="mono">${l.password}</td>
+              <td>${l.attempts.toLocaleString()}</td>
+              <td>${(l.duration_ms / 1000).toFixed(2)}s</td>
+              <td>${l.cracked ? '✓ cracked' : '✗ failed'}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    `;
+  }
+
+  // expose so the cracker section can call it when the time comes
+  window.addLog = addLog;
+</script>
+<script src="snake.js"></script>
+<script>
+  Snake.init('snake-mount');
+</script>
+</body>
+</html>
