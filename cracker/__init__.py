@@ -8,7 +8,6 @@ def crack_password(password):
     attempts = 0
     start = time.perf_counter()
 
-    # We simulate brute force by increasing length of guesses
     for length in range(1, len(password) + 1):
 
         for combo in itertools.product(chars, repeat=length):

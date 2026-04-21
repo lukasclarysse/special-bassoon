@@ -232,6 +232,22 @@
     }
     td.mono { color: var(--accent); }
 
+    /* ── Export buttons ── */
+    .btn-export {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      font-family: var(--mono);
+      font-size: .72rem;
+      padding: .3rem .8rem;
+      border-radius: 3px;
+      cursor: pointer;
+      letter-spacing: .04em;
+      transition: all .15s;
+    }
+    .btn-export:hover { border-color: var(--accent); color: var(--accent); }
+    .btn-export:disabled { opacity: .3; cursor: not-allowed; }
+
     /* ── Cracker placeholder ── */
     .placeholder-notice {
       background: var(--surface);
@@ -313,6 +329,10 @@
 
   <!-- ── Logs ── -->
   <section class="panel" id="tab-logs">
+    <div style="display:flex; gap:.6rem; justify-content:flex-end; margin-bottom:.5rem;">
+      <button class="btn-export" id="export-csv">export csv</button>
+      <button class="btn-export" id="export-txt">export txt</button>
+    </div>
     <div id="logs-container">
       <p class="logs-empty">No crack attempts logged yet.</p>
     </div>
@@ -442,6 +462,48 @@
 
   // expose so the cracker section can call it when the time comes
   window.addLog = addLog;
+
+  // ── Export ───────────────────────────────────────────────────────────────
+  function downloadFile(filename, content, mimeType) {
+    const blob = new Blob([content], { type: mimeType });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function exportCSV() {
+    const header = 'password,attempts,duration_s,cracked';
+    const rows   = logs.map(l =>
+      `"${l.password}",${l.attempts},${(l.duration_ms / 1000).toFixed(6)},${l.cracked}`
+    );
+    downloadFile('crack-logs.csv', [header, ...rows].join('\n'), 'text/csv');
+  }
+
+  function exportTXT() {
+    const lines = logs.map((l, i) =>
+      `[${i + 1}] password: ${l.password || '—'}  |  attempts: ${l.attempts.toLocaleString()}  |  time: ${(l.duration_ms / 1000).toFixed(6)}s  |  result: ${l.cracked ? 'cracked' : 'failed'}`
+    );
+    const content = ['crack attempt log', '─'.repeat(64), ...lines].join('\n');
+    downloadFile('crack-logs.txt', content, 'text/plain');
+  }
+
+  function updateExportButtons() {
+    const disabled = logs.length === 0;
+    document.getElementById('export-csv').disabled = disabled;
+    document.getElementById('export-txt').disabled = disabled;
+  }
+
+  document.getElementById('export-csv').addEventListener('click', exportCSV);
+  document.getElementById('export-txt').addEventListener('click', exportTXT);
+
+  // keep buttons in sync — patch addLog to call updateExportButtons
+  const _addLog = addLog;
+  window.addLog = function(entry) { _addLog(entry); updateExportButtons(); };
+
+  updateExportButtons();
 
   
   const crackInput = document.getElementById('crack-input');
