@@ -13,10 +13,7 @@ def crack_password(password):
 
         for combo in itertools.product(chars, repeat=length):
             guess = "".join(combo)
-            attempts += 1
-
-            # slow it down so you can SEE it working (optional)
-            
+            attempts += 1            
 
             if guess == password:
                 end = time.perf_counter()
