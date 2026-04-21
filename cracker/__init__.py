@@ -1,30 +1,38 @@
 import string
 import time
+import itertools
 
 def crack_password(password):
-    found_pw = ""
-    tries = 0
+    chars = string.ascii_lowercase + string.ascii_uppercase + string.digits + string.punctuation
 
+    attempts = 0
     start = time.perf_counter()
 
-    for char in password:
-        time.sleep(0.2)
-        if char.isdigit():
-            found_pw += char
-        elif char.isalpha():
-            found_pw += char
-        elif char in string.punctuation:
-            found_pw += char
+    # We simulate brute force by increasing length of guesses
+    for length in range(1, len(password) + 1):
 
-        tries += 1
+        for combo in itertools.product(chars, repeat=length):
+            guess = "".join(combo)
+            attempts += 1
+
+            # slow it down so you can SEE it working (optional)
+            
+
+            if guess == password:
+                end = time.perf_counter()
+
+                return {
+                    "password": guess,
+                    "attempts": attempts,
+                    "duration_ms": round((end - start) * 1000, 2),
+                    "cracked": True
+                }
 
     end = time.perf_counter()
 
-    duration = (end - start) * 1000
-
     return {
-        "password": found_pw,
-        "attempts": tries,
-        "duration_ms": duration,
-        "cracked": True
+        "password": "",
+        "attempts": attempts,
+        "duration_ms": round((end - start) * 1000, 2),
+        "cracked": False
     }
