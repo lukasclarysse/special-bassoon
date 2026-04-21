@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -305,7 +306,6 @@
     <button class="btn-primary" id="crack-btn" disabled>Crack</button>
 
     <div class="placeholder-notice">
-      <span>// cracker not yet connected.</span><br />
       Backend endpoint <span>/api/crack</span> is stubbed — wire up your teammate's
       module and this tab will come alive. Play snake while you wait.
     </div>
@@ -447,6 +447,58 @@
 
   // expose so the cracker section can call it when the time comes
   window.addLog = addLog;
+
+  
+  const crackInput = document.getElementById('crack-input');
+  const crackBtn = document.getElementById('crack-btn');
+  const crackStatus = document.getElementById('crack-status');
+
+  // enable button when typing
+  crackInput.addEventListener('input', () => {
+    crackBtn.disabled = !crackInput.value.trim();
+  });
+
+  // when clicking "Crack"
+  crackBtn.addEventListener('click', async () => {
+    const password = crackInput.value;
+
+    crackBtn.disabled = true;
+    crackBtn.textContent = 'Cracking...';
+    crackStatus.textContent = '';
+
+    try {
+      const res = await fetch(`${API}/api/crack`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password })
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        crackStatus.textContent = data.error || 'Error';
+        return;
+      }
+
+      crackStatus.textContent =
+        `Found: ${data.password} | Attempts: ${data.attempts} | Time: ${(data.duration_ms / 1000).toFixed(6)}s`;
+
+      // log it
+      window.addLog({
+        password: data.password,
+        attempts: data.attempts,
+        duration_ms: data.duration_ms,
+        cracked: data.cracked
+      });
+
+    } catch (err) {
+      crackStatus.textContent = 'Server not running';
+    }
+
+    crackBtn.disabled = false;
+    crackBtn.textContent = 'Crack';
+  });
+
 </script>
 <script src="snake.js"></script>
 <script>

@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-
+from cracker import crack_password
 from generator.generator import generate_password
 # from cracker.cracker import crack_password  # uncomment when cracker is ready
 
@@ -66,7 +66,10 @@ def crack():
     # result = crack_password(password)
     # return jsonify(result)
 
-    return jsonify({"message": "Cracker not yet connected."}), 501
+    # return jsonify({"message": "Cracker not yet connected."}), 501
+
+    result = crack_password(password)
+    return jsonify(result)
 
 
 # ── Entry point ───────────────────────────────────────────────────────────────
