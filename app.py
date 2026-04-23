@@ -2,29 +2,15 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 from cracker import crack_password
 from generator.generator import generate_password
-# from cracker.cracker import crack_password  # uncomment when cracker is ready
 
 app = Flask(__name__)
-CORS(app)  # allows the frontend to talk to this server
+CORS(app)
 
 
 # ── Generator ────────────────────────────────────────────────────────────────
 
 @app.route("/api/generate", methods=["POST"])
 def generate():
-    """
-    Expects JSON body:
-    {
-        "length": 20,
-        "char_types": {
-            "lowercase": true,
-            "uppercase": true,
-            "numbers": true,
-            "special": false
-        },
-        "excluded_chars": ";:/\\"'`"
-    }
-    """
     data = request.get_json()
 
     length = data.get("length")
@@ -48,25 +34,11 @@ def generate():
 
 @app.route("/api/crack", methods=["POST"])
 def crack():
-    """
-    Expects JSON body:
-    {
-        "password": "abc123"
-    }
-
-    Placeholder — swap the body for the real cracker call when ready.
-    """
     data = request.get_json()
     password = data.get("password", "")
 
     if not password:
         return jsonify({"error": "No password provided."}), 400
-
-    # TODO: replace with real cracker call
-    # result = crack_password(password)
-    # return jsonify(result)
-
-    # return jsonify({"message": "Cracker not yet connected."}), 501
 
     result = crack_password(password)
     return jsonify(result)
