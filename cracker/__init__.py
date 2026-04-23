@@ -32,5 +32,4 @@ def crack_password(password):
         "duration_ms": round((end - start) * 1000, 2),
         "cracked": False
     }
-    import csv
 
