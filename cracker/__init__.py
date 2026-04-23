@@ -5,35 +5,42 @@ import time
 
 chars = string.ascii_letters + string.digits + string.punctuation
 
+
+
 def try_chunk(args):
     prefix, password = args
     target_length = len(password)
-
-    # Only generate remaining length
     remaining_length = target_length - 1
+
+    attempts = 0
 
     for combo in itertools.product(chars, repeat=remaining_length):
         guess = prefix + "".join(combo)
+        attempts += 1
 
         if guess == password:
-            return guess
+            return (guess, attempts)
 
-    return None
+    return (None, attempts)
 
 
 def crack(password):
     start = time.perf_counter()
+    total_attempts = 0
 
     prefixes = chars
     pool = Pool(cpu_count())
 
-    for result in pool.imap_unordered(try_chunk, [(p, password) for p in prefixes]):
+    for result, attempts in pool.imap_unordered(try_chunk, [(p, password) for p in prefixes]):
+        total_attempts += attempts
+
         if result:
             pool.terminate()
             end = time.perf_counter()
 
             return {
                 "password": result,
+                "attempts": total_attempts,
                 "duration_ms": round((end - start) * 1000, 2),
                 "cracked": True
             }
@@ -45,6 +52,7 @@ def crack(password):
 
     return {
         "password": "",
+        "attempts": total_attempts,
         "duration_ms": round((end - start) * 1000, 2),
         "cracked": False
     }
