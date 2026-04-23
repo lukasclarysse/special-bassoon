@@ -1,35 +1,50 @@
+from multiprocessing import Pool, cpu_count
+import itertools
 import string
 import time
-import itertools
 
-def crack_password(password):
-    chars = string.ascii_lowercase + string.ascii_uppercase + string.digits + string.punctuation
+chars = string.ascii_letters + string.digits + string.punctuation
 
-    attempts = 0
+def try_chunk(args):
+    prefix, password = args
+    target_length = len(password)
+
+    # Only generate remaining length
+    remaining_length = target_length - 1
+
+    for combo in itertools.product(chars, repeat=remaining_length):
+        guess = prefix + "".join(combo)
+
+        if guess == password:
+            return guess
+
+    return None
+
+
+def crack(password):
     start = time.perf_counter()
 
-    for length in range(1, len(password) + 1):
+    prefixes = chars
+    pool = Pool(cpu_count())
 
-        for combo in itertools.product(chars, repeat=length):
-            guess = "".join(combo)
-            attempts += 1            
+    for result in pool.imap_unordered(try_chunk, [(p, password) for p in prefixes]):
+        if result:
+            pool.terminate()
+            end = time.perf_counter()
 
-            if guess == password:
-                end = time.perf_counter()
+            return {
+                "password": result,
+                "duration_ms": round((end - start) * 1000, 2),
+                "cracked": True
+            }
 
-                return {
-                    "password": guess,
-                    "attempts": attempts,
-                    "duration_ms": round((end - start) * 1000, 2),
-                    "cracked": True
-                }
+    pool.close()
+    pool.join()
 
     end = time.perf_counter()
 
     return {
         "password": "",
-        "attempts": attempts,
         "duration_ms": round((end - start) * 1000, 2),
         "cracked": False
     }
-

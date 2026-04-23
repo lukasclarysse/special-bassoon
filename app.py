@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-from cracker import crack_password
+from cracker import crack
 from generator.generator import generate_password
 
 app = Flask(__name__)
@@ -33,14 +33,14 @@ def generate():
 # ── Cracker ──────────────────────────────────────────────────────────────────
 
 @app.route("/api/crack", methods=["POST"])
-def crack():
+def crack_route():
     data = request.get_json()
     password = data.get("password", "")
 
     if not password:
         return jsonify({"error": "No password provided."}), 400
 
-    result = crack_password(password)
+    result = crack(password)
     return jsonify(result)
 
 
