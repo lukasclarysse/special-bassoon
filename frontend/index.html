@@ -448,6 +448,11 @@
       <div id="bench-gr"></div>
     </div>
 
+    <div class="bench-group">
+    <p class="bench-label">high complexity case — "g7+(W}"</p>
+    <div id="bench-gx"></div>
+  </div>
+
     <p class="bench-note">
       speedup multipliers are relative to the slowest implementation in each group.
       c no-recursion is ~15× faster than python single on 4 chars.
@@ -752,6 +757,13 @@
         { label: 'python multi',   t: 73.50,  color: '#1D9E75' },
         { label: 'c no recursion', t: 60.60,  color: '#378ADD' },
         { label: 'c recursion',    t: 47.52,  color: '#534AB7' },
+      ]
+    },
+    {
+      id: 'bench-gx',
+      rows: [
+        { label: 'python multi',   t: 1461.68, color: '#1D9E75' },
+        { label: 'python single',  t: 6671.23, color: '#639922' }
       ]
     }
   ];
