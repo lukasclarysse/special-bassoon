@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-from cracker import crack
+from cracker.cracker import crack
 from generator.generator import generate_password
 
 app = Flask(__name__)

@@ -1,6 +1,6 @@
 # password-toolkit
 
-A small password generator and brute-force cracker with a web frontend. Built for a Python course project.
+A password generator and brute-force cracker with a lightweight web frontend. Originally built for a Python course project, now extended with multiprocessing and optimized C implementations for performance comparison.
 
 ---
 
@@ -17,7 +17,8 @@ password-toolkit/
 │   └── generator.py
 └── cracker/
     ├── __init__.py
-    └── cracker.py
+    ├── cracker.py      # Python implementations (single + multi)
+    └── c_impl/         # C implementations (recursive + non-recursive)
 ```
 
 ---
@@ -49,45 +50,114 @@ You should see something like:
 
 **4. open the frontend**
 
-Just open `index.html` directly in your browser — no extra server needed.
-The page talks to Flask at `localhost:5000` automatically.
+Open `index.html` directly in your browser.  
+The page communicates with Flask at `localhost:5000`.
 
 ---
 
 ## tabs
 
-**Generator** — configure length, character types, and any characters to exclude. Generates a password and copies it to your clipboard.
+**Generator** — configure length, character sets, and exclusions. Generates a password and copies it to your clipboard.
 
-**Cracker** — paste any password and brute-force it. Works through every possible combination from length 1 upward. Realistically cracks passwords up to ~5 characters depending on complexity; anything longer will take a very long time. Play snake while you wait.
+**Cracker** — brute-force a password using different implementations:
+- Python (single-threaded) 
+- Python (multiprocessing)  this one is what is used in the webapp; the other implementations are only available as source code
+- C (iterative, no recursion)
+- C (recursive)
 
-**Logs** — every completed crack attempt is logged with the password found, number of attempts, and time taken. Exportable as CSV or TXT.
+**Logs** — records completed crack attempts with password, attempts, and time. Exportable as CSV or TXT.
 
 ---
 
-## notes on cracker performance
+## performance benchmarks
 
-Speed depends on two things: length and position in the search space. The cracker iterates through all 94 printable ASCII characters in order (punctuation first, then digits, uppercase, lowercase) and tries every combination from length 1 upward — so where your password falls in that sequence matters as much as how long it is.
+All benchmarks shown are worst-case unless stated otherwise (`~` is the last ASCII character, i.e. end of search space).
 
-Real benchmark results on a typical laptop:
+### 4-character worst case — `"~~~~"`
 
-| password | length | attempts | time | position in space |
-|---|---|---|---|---|
-| `abc` | 3 | 9K | 1ms | 1% — early |
-| `c0]P` | 4 | 2.97M | 0.28s | 4% — early |
-| `6{vY` | 4 | 49.8M | 4.82s | 64% — late |
-| `'F1p` | 4 | 57.6M | 5.56s | 74% — late |
-| `;p1M` | 4 | 65.8M | 6.42s | 84% — late |
-| `2f;UN` | 5 | 4.3B | 439s | 59% — mid |
-| `g7+(W}` | 6 | 56.1B | ~2h | 8% — early |
+| implementation | time | relative speed |
+|--|--|--|
+| Python (single) | 18.67s | baseline |
+| Python (multi) | 1.89s | ×9.88 |
+| C (no recursion) | 1.21s | ×15.43 |
+| C (recursion) | 1.45s | ×12.88 |
 
-position % = attempts ÷ total combinations up to and including that length.
+---
 
-The key insight is that length compounds exponentially. `g7+(W}` is only 8% into the 6-character search space, but 8% of ~689 billion combinations is still 56 billion attempts — nearly 2 hours. A 4-character password late in the space (`; p1M`, 84%) cracks faster than a 6-character one that's early (8%). Beyond 6 characters, pure brute force becomes effectively impractical.
+### 5-character worst case — `"~~~~~"`
+
+| implementation | time | relative speed |
+|--|--|--|
+| Python (single) | 12.87m | baseline |
+| Python (multi) | 2.88m | ×4.46 |
+| C (no recursion) | 2.36m | ×5.45 |
+| C (recursion) | 1.91m | ×6.76 |
+
+---
+
+### realistic simulation — `"r.D85"`
+
+| implementation | time | relative speed |
+|--|--|--|
+| Python (multi) | 1.23m | baseline |
+| C (no recursion) | 1.01m | ×1.21 |
+| C (recursion) | 47.52s | ×1.55 |
+
+---
+
+### high complexity case — `"g7+(W}"`
+
+| implementation | time |
+|--|--|
+| Python (multi) | 24.36m |
+| Python (single) | 111.19m |
+
+(≈4.5× speedup from multiprocessing)
+
+---
+
+## analysis
+
+- Multiprocessing provides substantial gains for Python, especially on shorter search spaces (up to ~10× on 4-character inputs).
+- C implementations significantly outperform Python due to lower-level memory and loop control.
+- Non-recursive C performs best on shorter runs, but recursive C overtakes it on longer searches.
+- This is likely due to improved branch prediction and cache behavior at higher iteration counts.
+- Performance gains diminish as search space grows, since brute force remains exponential.
+
+---
+
+## notes on brute-force behavior
+
+The cracker iterates through all 94 printable ASCII characters:
+```
+punctuation → digits → uppercase → lowercase
+```
+
+It tests:
+- all combinations of length 1
+- then length 2
+- and so on…
+
+This means:
+- position in the search space matters as much as length
+- late-position passwords take significantly longer
+
+Even “early” passwords in longer lengths are expensive:
+- 6-character space ≈ 689 billion combinations
+- 8% of that is still ~56 billion attempts
 
 ---
 
 ## known limitations
 
-- The cracker is pure Python brute force — no dictionary attacks, no optimisations. It is intentionally simple.
-- `pyperclip` (clipboard copy in the generator CLI) may not work on headless Linux without a clipboard daemon. The web frontend copies independently via the browser so this only affects running `generator.py` directly.
-- Logs are session-only — they reset when you close or refresh the page. Export before closing if you want to keep them.
+- Pure brute-force only — no heuristics or dictionary attacks
+- Performance still scales exponentially regardless of implementation
+- Logs are session-only (export before refreshing)
+- `pyperclip` may not work on headless Linux (frontend unaffected)
+
+---
+
+## takeaway
+
+Small increases in password length drastically increase cracking time.  
+Implementation improvements (multiprocessing, C) help, but do not change the exponential nature of brute force.
